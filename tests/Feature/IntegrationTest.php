@@ -11,7 +11,7 @@ use Laravel\Passport\Passport;
 
 class IntegrationTest extends TestCase
 {
-    use RefreshDatabase;
+    // use RefreshDatabase;
 
     protected $user;
     protected $token;
@@ -25,12 +25,9 @@ class IntegrationTest extends TestCase
             'password' => bcrypt('password'),
         ]);
 
-        $response = $this->postJson('/api/login', [
-            'email' => 'test@example.com',
-            'password' => 'password',
-        ]);
+        Passport::actingAs($this->user);
 
-        $this->token = $response->json('token');
+        $this->token = $this->user->createToken('TestToken')->accessToken;
     }
 
     public function test_add_integration() 
@@ -40,6 +37,7 @@ class IntegrationTest extends TestCase
         ], ['Authorization' => 'Bearer ' . $this->token]);
     
         $response->assertStatus(201);
+
         $this->assertDatabaseHas('integrations', [
             'marketplace' => 'hepsiburada',
         ]);
@@ -51,13 +49,12 @@ class IntegrationTest extends TestCase
             'marketplace' => 'hepsiburada',
         ]);
 
-        echo $integration->id;
-
         $response = $this->putJson("/api/integration/{$integration->id}", [
             'marketplace' => 'trendyol',
         ], ['Authorization' => 'Bearer ' . $this->token]);
 
         $response->assertStatus(200);
+
         $this->assertDatabaseHas('integrations', [
             'id' => $integration->id,
             'marketplace' => 'trendyol',
@@ -71,6 +68,7 @@ class IntegrationTest extends TestCase
         $response = $this->deleteJson("/api/integration/{$integration->id}", [], ['Authorization' => 'Bearer ' . $this->token]);
 
         $response->assertStatus(200);
+
         $this->assertDatabaseMissing('integrations', [
             'id' => $integration->id,
         ]);
